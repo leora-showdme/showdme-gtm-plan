@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competency & Pricing Insights</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom CSS Variables for the provided palette */
+        :root {
+            --button-link-color: #57b3de;
+            --text-link-color: #348bb4;
+            --highlight-color: #8cc345;
+            --highlight-color-darken: #5d822e;
+            --background-color-1: #F6F7FB;
+            --background-color-2: #e6e6e6;
+            --background-color-3: #fff;
+            --background-color-4: #EDF0F7;
+            --card-background: #fafafd;
+            --text-color-1: #2b2b2b;
+            --text-color-2: #525252;
+            --negative-color: #ed8f90;
+            --border-color: #E7EBEF;
+            --required: #cd4343;
+            --sm-icon-button-color: #22c1e8;
+            --invalid-background-color: #ebccd1;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color-1);
+            color: var(--text-color-1);
+        }
+
+        /* General Button Styling */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: var(--button-link-color);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: var(--text-link-color);
+        }
+        .btn-secondary {
+            background-color: var(--background-color-2);
+            color: var(--text-color-2);
+        }
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+        .btn-highlight {
+            background-color: var(--highlight-color);
+            color: white;
+        }
+        .btn-highlight:hover {
+            background-color: var(--highlight-color-darken);
+        }
+
+        /* Navigation Links */
+        .nav-link {
+            transition: color 0.3s ease;
+            position: relative;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: 500;
+            color: var(--text-color-2);
+        }
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            display: block;
+            margin-top: 5px;
+            right: 0;
+            background: var(--text-link-color);
+            transition: width 0.3s ease;
+            -webkit-transition: width 0.3s ease;
+        }
+        .nav-link:hover:after, .nav-link.active:after {
+            width: 100%;
+            left: 0;
+            background-color: var(--text-link-color);
+        }
+        .nav-link.active {
+            color: var(--text-link-color);
+        }
+
+        /* Card Styling */
+        .card {
+            background-color: var(--card-background);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            transition: all 0.3s ease-in-out;
+            border: 1px solid var(--border-color);
+        }
+        .card-interactive:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        /* Chart Containers */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px; /* Adjusted for larger charts */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px; /* Increased height for desktop */
+                max-height: 500px;
+            }
+        }
+
+        /* Tooltips for info icons */
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 8px;
+            z-index: 50;
+            display: none;
+            width: 16rem; /* 256px */
+            background-color: rgba(31, 41, 55, 0.95); /* bg-gray-800 with some transparency */
+            color: white;
+            font-size: 0.75rem; /* text-xs */
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 0.5rem; /* p-2 */
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+            pointer-events: none; /* Allows clicks to pass through when not visible */
+            text-align: center;
+        }
+        .group:hover .tooltip, .has-tooltip:hover .tooltip {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Animations */
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            cursor: pointer;
+            outline: none;
+            border-radius: 15px;
+            height: 8px;
+            background: var(--background-color-2);
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 24px;
+            width: 24px;
+            background-color: var(--highlight-color);
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px var(--highlight-color-darken);
+            transition: background-color 0.2s ease-in-out;
+        }
+        input[type=range]:active::-webkit-slider-thumb {
+            transform: scale(1.1);
+        }
+
+        /* Tab Buttons for Optimization Section */
+        .tab-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        .tab-button.active {
+            background-color: var(--background-color-3);
+            color: var(--text-color-1);
+            border-color: var(--highlight-color);
+        }
+        .tab-button:not(.active) {
+            background-color: var(--background-color-2);
+            color: var(--text-color-2);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Main Header and Navigation -->
+    <header id="main-header" class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-sm">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <span class="font-bold text-lg text-text-link-color">Competency & Pricing Insights</span>
+                </div>
+                <div class="hidden md:block">
+                    <div id="nav-links" class="ml-10 flex items-baseline space-x-2">
+                        <a href="#hero" class="nav-link">Home</a>
+                        <a href="#value-propositions" class="nav-link">Value</a>
+                        <a href="#pricing-calculator-header" class="nav-link">Calculator</a>
+                        <a href="#pricing-strategy-header" class="nav-link">Strategy</a>
+                    </div>
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-white hover:bg-button-link-color focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background-color-1 focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div id="mobile-nav-links" class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#hero" class="block nav-link text-center">Home</a>
+                <a href="#value-propositions" class="block nav-link text-center">Value</a>
+                <a href="#pricing-calculator-header" class="block nav-link text-center">Calculator</a>
+                <a href="#pricing-strategy-header" class="block nav-link text-center">Strategy</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        <!-- Hero Section -->
+        <section id="hero" class="text-center py-16">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-text-color-1 mb-4">Mastering Competency & Pricing</h1>
+            <p class="mt-6 text-lg md:text-xl text-text-color-2 max-w-3xl mx-auto">
+                Explore the strategic value of digitizing competency and assessment processes, calculate potential returns, and learn effective pricing strategies for your SaaS features.
+            </p>
+            <div class="mt-8">
+                <a href="#value-propositions" class="btn btn-primary mr-4">Explore Value</a>
+                <a href="#pricing-calculator-header" class="btn btn-secondary">Calculate Pricing</a>
+            </div>
+        </section>
+
+        <!-- Value Propositions Section -->
+        <section id="value-propositions" class="py-16 bg-background-color-4 rounded-xl mb-12">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-text-color-1 mb-2">The Value of Digitizing Competency & Assessment</h2>
+                <p class="text-lg text-text-color-2 max-w-3xl mx-auto">Discover how transforming your competency and assessment processes can drive efficiency, optimize talent, and secure a competitive edge.</p>
+            </div>
+
+            <!-- The Challenge: Manual vs. Digital -->
+            <div id="challenge" class="py-8">
+                <div class="text-center mb-8">
+                    <h3 class="text-2xl font-bold text-text-color-1 mb-2">The Challenge: Manual vs. Digital</h3>
+                    <p class="text-md text-text-color-2 max-w-3xl mx-auto">Traditional, manual assessment methods are slow, biased, and inefficient. This section highlights the stark contrast between outdated practices and a modern, digitized approach.</p>
+                </div>
+                <div class="overflow-x-auto bg-white rounded-lg shadow-lg p-4">
+                    <table class="w-full text-sm text-left text-text-color-2">
+                        <thead class="text-xs text-text-color-1 uppercase bg-background-color-2">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Aspect</th>
+                                <th scope="col" class="px-6 py-3 bg-negative-color/10 text-negative-color">Traditional / Manual Assessment</th>
+                                <th scope="col" class="px-6 py-3 bg-highlight-color/10 text-highlight-color-darken">Digitized / Competency-Based Assessment</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- The Solution: Core Value Propositions -->
+            <div id="solution" class="py-8">
+                <div class="text-center mb-8">
+                    <h3 class="text-2xl font-bold text-text-color-1 mb-2">The Solution: Core Value Propositions</h3>
+                    <p class="text-md text-text-color-2 max-w-3xl mx-auto">Digitization delivers transformative benefits. Explore the six core value propositions that drive strategic growth, enhance talent management, and deliver significant ROI. Click on each card to learn more.</p>
+                </div>
+                <div id="value-cards-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+            </div>
+
+            <!-- Modal for Value Cards -->
+            <div id="modal" class="fixed inset-0 bg-black bg-opacity50 z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start">
+                            <h4 id="modal-title" class="text-2xl font-bold text-text-color-1"></h4>
+                            <button id="modal-close" class="text-gray-400 hover:text-gray-600">&times;</button>
+                        </div>
+                        <p id="modal-body" class="mt-4 text-text-color-2 leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- The Proof: Quantifiable Benefits -->
+            <div id="proof" class="py-8">
+                <div class="text-center mb-8">
+                    <h3 class="text-2xl font-bold text-text-color-1 mb-2">The Proof: Quantifiable Benefits</h3>
+                    <p class="text-md text-text-color-2 max-w-3xl mx-auto">The value of digitization is not just theoretical; it's backed by measurable results. This interactive chart showcases the significant cost savings, efficiency gains, and quality improvements. Hover over bars for details and use filters to explore the data.</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex justify-center mb-4 space-x-2" id="chart-filters">
+                        <button class="filter-btn bg-button-link-color text-white px-4 py-2 rounded-full text-sm font-medium" data-filter="all">All Gains</button>
+                        <button class="filter-btn bg-background-color-2 text-text-color-2 px-4 py-2 rounded-full text-sm font-medium" data-filter="time">Time/Efficiency</button>
+                        <button class="filter-btn bg-background-color-2 text-text-color-2 px-4 py-2 rounded-full text-sm font-medium" data-filter="cost">Cost/Savings</button>
+                        <button class="filter-btn bg-background-color-2 text-text-color-2 px-4 py-2 rounded-full text-sm font-medium" data-filter="quality">Quality/Retention</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="benefitsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- The 'How': Key Technology Enablers -->
+            <div id="how" class="py-8">
+                <div class="text-center mb-8">
+                    <h3 class="text-2xl font-bold text-text-color-1 mb-2">The 'How': Key Technology Enablers</h3>
+                    <p class="text-md text-text-color-2 max-w-3xl mx-auto">Advanced technology underpins the transformative power of digital competency platforms. These key enablers work together to create an integrated, intelligent, and user-friendly ecosystem. Hover over each one to see how it contributes.</p>
+                </div>
+                <div id="enablers-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 text-center">
+                </div>
+            </div>
+        </section>
+
+        <!-- Separator for Pricing Calculator Section -->
+        <div id="pricing-calculator-header" class="bg-background-color-3 p-8 md:p-12 rounded-xl shadow-md text-center mb-12 main-section-header">
+            <h2 class="text-4xl md:text-5xl font-bold text-text-link-color">Pricing Calculator</h2>
+            <p class="mt-4 text-lg text-text-color-2 max-w-3xl mx-auto">Estimate the annual value and explore pricing models for our skilled nursing competency features.</p>
+        </div>
+
+        <!-- Pricing Calculator Section -->
+        <section id="pricing-calculator" class="py-16 bg-background-color-1 rounded-xl mb-12">
+            <div class="space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Input Section: Organization Details -->
+                    <div class="card">
+                        <div class="flex items-center gap-3 mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-button-link-color"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            <h3 class="text-2xl font-semibold text-text-color-1">1. Organization Details</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="numberOfFacilities" class="block text-sm font-medium text-text-color-2">Number of Facilities</label>
+                                    <input type="number" id="numberOfFacilities" placeholder="1" value="1" class="mt-1 block w-full px-3 py-2 bg-white border border-border-color rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-button-link-color focus:border-button-link-color sm:text-sm"/>
+                                </div>
+                                <div>
+                                    <label for="bedsPerFacility" class="block text-sm font-medium text-text-color-2">Avg. Beds per Facility</label>
+                                    <input type="number" id="bedsPerFacility" placeholder="100" value="100" class="mt-1 block w-full px-3 py-2 bg-white border border-border-color rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-button-link-color focus:border-button-link-color sm:text-sm"/>
+                                </div>
+                            </div>
+                            <div id="employee-counts-container" class="bg-background-color-1 p-3 rounded-lg mt-4 hidden">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <h4 class="text-lg font-medium text-text-color-1">Estimated Employee Counts</h4>
+                                    <div class="relative group">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-400"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                        <div class="tooltip">
+                                            The default staffing ratios are based on synthesized industry averages. They are intended as a starting point and should be adjusted in the Assumptions section to match the specific client's data.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="employee-counts-list" class="space-y-1 text-sm"></div>
+                            </div>
+                        </div>
+                        <div class="mt-8 flex items-center space-x-4">
+                            <button id="calculate-btn" class="w-full btn btn-primary">Calculate Value & Pricing</button>
+                            <button id="reset-btn" class="w-full btn btn-secondary">Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- Results Section: Estimated Annual Value -->
+                    <div class="card">
+                        <div class="flex items-center gap-3 mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-highlight-color"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            <h3 class="text-2xl font-semibold text-text-color-1">2. Estimated Annual Value</h3>
+                        </div>
+                        <div id="results-container">
+                            <div class="flex flex-col items-center justify-center h-full text-center text-text-color-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-button-link-color"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <p class="mt-4">Your results will be displayed here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Container for dynamic pricing sections -->
+                <div id="pricing-sections" class="space-y-8"></div>
+            </div>
+
+            <footer class="text-center mt-8 text-xs text-text-color-2">
+                <p>Disclaimer: This calculator provides an estimate for illustrative purposes only. Actual value and savings may vary based on specific organizational factors. The underlying data is based on industry research and typical customer outcomes.</p>
+            </footer>
+        </section>
+
+        <!-- Separator for Pricing Strategy Section -->
+        <div id="pricing-strategy-header" class="bg-background-color-3 p-8 md:p-12 rounded-xl shadow-md text-center mb-12 main-section-header">
+            <h2 class="text-4xl md:text-5xl font-bold text-text-link-color">Strategic Pricing for New SaaS Features</h2>
+            <p class="mt-4 text-lg text-text-color-2 max-w-3xl mx-auto">An interactive guide for Product Managers to master the art and science of feature pricing—from valuation to launch.</p>
+        </div>
+
+        <!-- Pricing Strategy Section -->
+        <section id="pricing-strategy" class="py-16 bg-background-color-4 rounded-xl">
+            <!-- Section 1: Foundations -->
+            <div id="foundations" class="pt-12 text-center mb-16">
+                <h3 class="text-2xl font-bold text-text-color-1 mb-4">1. Foundations of Feature Pricing</h3>
+                <p class="text-md text-text-color-2 max-w-3xl mx-auto">Effective pricing starts with a deep understanding of the value your feature delivers to customers and the costs you incur to provide it.</p>
+
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                    <div class="card bg-card-background">
+                        <h4 class="text-xl font-bold mb-4 text-text-color-1">Quantifying Feature Value</h4>
+                        <p class="mb-6 text-text-color-2">Go beyond a simple feature list. Value is about articulating the tangible (monetary) and intangible benefits your feature provides. A key tool for this is Return on Investment (ROI) analysis.</p>
+                        <div class="bg-white p-4 rounded-lg border border-border-color">
+                            <div class="mb-4">
+                                <label for="totalBenefits" class="font-semibold text-text-color-2">Total Benefits ($<span id="benefitsValue">45000</span>)</label>
+                                <input type="range" id="totalBenefits" min="10000" max="100000" value="45000" class="w-full mt-1">
+                            </div>
+                            <div class="mb-4">
+                                <label for="totalCosts" class="font-semibold text-text-color-2">Total Costs ($<span id="costsValue">15000</span>)</label>
+                                <input type="range" id="totalCosts" min="5000" max="50000" value="15000" class="w-full mt-1">
+                            </div>
+                            <div class="h-48 chart-container">
+                                <canvas id="roiChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-card-background">
+                        <h4 class="text-xl font-bold mb-4 text-text-color-1">Assessing Willingness to Pay (WTP)</h4>
+                        <p class="mb-6 text-text-color-2">WTP reflects the perceived value in your customer's eyes. Multiple methods can gauge it, and combining them provides the most robust insights.</p>
+                        <div id="wtp-methods-container" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                    <div class="card bg-card-background">
+                        <h4 class="text-xl font-bold mb-4 text-text-color-1">Calculating Costs</h4>
+                        <p class="mb-4 text-text-color-2">A thorough cost calculation is essential for profitability. Understand both upfront development and ongoing operational costs. Hover over the chart to see typical cost breakdowns for a new SaaS feature.</p>
+                        <div class="h-80 chart-container">
+                            <canvas id="costChart"></canvas>
+                        </div>
+                    </div>
+                     <div class="card bg-card-background">
+                        <h4 class="text-xl font-bold mb-4 text-text-color-1">Van Westendorp Price Sensitivity Meter</h4>
+                        <p class="mb-4 text-text-color-2">This popular method helps find an acceptable price range by asking four key questions. The intersections of customer responses reveal optimal pricing points and boundaries.</p>
+                        <div class="h-80 chart-container">
+                            <canvas id="vanWestendorpChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Strategy -->
+            <div id="strategy" class="pt-12 text-center mb-16">
+                <h3 class="text-2xl font-bold text-text-color-1 mb-4">2. Strategic Pricing Models & Packaging</h3>
+                <p class="text-md text-text-color-2 max-w-3xl mx-auto">With value and costs defined, select the right model and packaging strategy. This decision directly impacts adoption, customer perception, and revenue.</p>
+
+                <div class="mt-8 text-left">
+                     <h4 class="text-xl font-bold mb-6 text-center text-text-color-1">Choosing Your Pricing Model</h4>
+                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="pricing-models-container"></div>
+                </div>
+
+                <div class="mt-12 text-left">
+                     <h4 class="text-xl font-bold mb-6 text-center text-text-color-1">Effective Bundling Strategies</h4>
+                     <p class="text-text-color-2 max-w-2xl mx-auto mb-8 text-center">Bundling combines products into a single package to increase perceived value. The goal is to drive incremental revenue, not just shift existing revenue at a lower margin.</p>
+                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="bundling-strategies-container"></div>
+                </div>
+            </div>
+
+            <!-- Section 3: Market -->
+            <div id="market" class="pt-12 text-center mb-16">
+                 <h3 class="text-2xl font-bold text-text-color-1 mb-4">3. Market Dynamics & Positioning</h3>
+                <p class="text-md text-text-color-2 max-w-3xl mx-auto">Your feature doesn't exist in a vacuum. A thorough analysis of competitors and a clear articulation of your unique value proposition are vital for strategic pricing and market positioning.</p>
+
+                <div class="mt-8 grid md:grid-cols-2 gap-8 text-left">
+                    <div class="card bg-card-background">
+                        <h4 class="text-xl font-bold mb-4 text-text-color-1">Competitive Pricing Analysis</h4>
+                        <p class="text-text-color-2 mb-6">Use competitor pricing as a market-validated benchmark, but look deeper than the price tag. Understand *how* they monetize and where your pricing model can be a strategic differentiator.</p>
+                        <ol class="list-decimal list-inside space-y-3 text-text-color-1">
+                            <li><span class="font-semibold">Identify Competitors:</span> Distinguish between direct and indirect rivals.</li>
+                            <li><span class="font-semibold">Gather Pricing Data:</span> Check websites, review sites, and conduct customer interviews.</li>
+                            <li><span class="font-semibold">Document Structures:</span> Map out tiers, features, and key pricing levers (e.g., users, usage).</li>
+                            <li><span class="font-semibold">Analyze Product & Marketing:</span> Study their features, UX, and messaging.</li>
+                            <li><span class="font-semibold">Conduct SWOT Analysis:</span> Find their strengths, weaknesses, opportunities, and threats.</li>
+                            <li><span class="font-semibold">Define Your Position:</span> Determine your unique value proposition and place in the market.</li>
+                        </ol>
+                    </div>
+                    <div class="card bg-card-background">
+                        <h4 class="text-xl font-bold mb-4 text-text-color-1">Articulating Your Value Proposition</h4>
+                        <p class="text-text-color-2 mb-6">Your price is a powerful signal of quality and market position. It must reinforce your brand narrative. The process of differentiation, value proposition, and pricing is not linear but iterative and interconnected.</p>
+                        <div class="space-y-4">
+                            <div class="flex items-start space-x-3">
+                                <span class="flex-shrink-0 h-6 w-6 rounded-full bg-highlight-color text-white flex items-center justify-center font-bold">✓</span>
+                                <p><span class="font-semibold">Compelling & Specific:</span> Clearly state the benefit.</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <span class="flex-shrink-0 h-6 w-6 rounded-full bg-highlight-color text-white flex items-center justify-center font-bold">✓</span>
+                                 <p><span class="font-semibold">Audience-Specific:</span> Resonate with your target user's pain points.</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <span class="flex-shrink-0 h-6 w-6 rounded-full bg-highlight-color text-white flex items-center justify-center font-bold">✓</span>
+                                 <p><span class="font-semibold">Highlights Differentiation:</span> Explain what makes you unique.</p>
+                            </div>
+                             <div class="flex items-start space-x-3">
+                                <span class="flex-shrink-0 h-6 w-6 rounded-full bg-highlight-color text-white flex items-center justify-center font-bold">✓</span>
+                                 <p><span class="font-semibold">Aligned with Price:</span> Justify the cost with clear value.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Integration -->
+            <div id="integration" class="pt-12 text-center mb-16">
+                <h3 class="text-2xl font-bold text-text-color-1 mb-4">4. Integrating with Existing Structures</h3>
+                <p class="text-md text-text-color-2 max-w-3xl mx-auto">New feature pricing must be carefully woven into your existing platform to align with business goals and minimize customer disruption.</p>
+
+                <div class="mt-8 grid md:grid-cols-2 gap-8 text-left">
+                    <div class="card bg-card-background">
+                        <h4 class="text-xl font-bold mb-4 text-text-color-1">Alignment with Business Goals</h4>
+                        <p class="text-text-color-2 mb-6">Every product improvement should contribute to business growth. Consider how your new feature's pricing will impact key SaaS metrics.</p>
+                        <div id="saas-metrics-container" class="space-y-4"></div>
+                    </div>
+                    <div class="card bg-card-background">
+                        <h4 class="text-xl font-bold mb-4 text-text-color-1">Minimizing Disruption & Cannibalization</h4>
+                        <p class="text-text-color-2 mb-6">Introduce new pricing strategically to avoid pushing customers away from higher-value offerings or causing confusion. Click below to explore key strategies.</p>
+                        <div id="disruption-strategies-container" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Optimization -->
+            <div id="optimization" class="pt-12 text-center mb-16">
+                <h3 class="text-2xl font-bold text-text-color-1 mb-4">5. Testing, Iteration & Optimization</h3>
+                <p class="text-md text-text-color-2 max-w-3xl mx-auto">Pricing is not static. It requires continuous testing, iteration, and optimization based on real-world data and customer feedback to adapt to changing market conditions.</p>
+
+                <div class="mt-8 text-left">
+                     <div class="p-4 sm:p-6 bg-background-color-2 rounded-lg">
+                        <div class="flex flex-wrap justify-center items-center gap-4 mb-6">
+                            <button class="tab-button active" data-tab="ab-testing">A/B Testing</button>
+                            <button class="tab-button" data-tab="pilots">Pilot Programs</button>
+                            <button class="tab-button" data-tab="feedback">Feedback Loops</button>
+                        </div>
+                        <div id="optimization-content" class="animate-fade-in"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: Communication -->
+            <div id="communication" class="pt-12 text-center mb-16">
+                <h3 class="text-2xl font-bold text-text-color-1 mb-4">6. Communicating Your New Price</h3>
+                <p class="text-md text-text-color-2 max-w-3xl mx-auto">The best pricing strategy can fail if not communicated effectively. A clear, value-driven message is paramount for successful adoption and minimizing negative reactions.</p>
+
+                <div class="mt-8 grid md:grid-cols-2 gap-8 text-left">
+                    <div class="card bg-card-background">
+                        <h4 class="text-xl font-bold mb-4 text-text-color-1">Crafting a Value-Driven Message</h4>
+                        <p class="text-text-color-2 mb-6">Focus on the "why" behind the price. Your communication should be confident, transparent, and centered on the customer's benefit.</p>
+                        <div class="space-y-4" id="communication-checklist"></div>
+                    </div>
+                    <div class="card bg-card-background">
+                        <h4 class="text-xl font-bold mb-4 text-text-color-1">Sales Enablement: The Last Mile</h4>
+                        <p class="text-text-color-2 mb-6">Equip your sales team to communicate value effectively. They are your front line and a critical source of pricing feedback.</p>
+                         <div class="space-y-3 text-text-color-2">
+                            <p><strong>Key Content:</strong> Case studies, sales playbooks, product sell sheets, and ROI calculators.</p>
+                            <p><strong>Key Skills:</strong> Consultative selling, product-led demos, and addressing objections with value-driven arguments.</p>
+                            <p><strong>Feedback Loop:</strong> Establish formal channels for sales to report pricing objections and competitive intel back to the product team.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-background-color-2 text-text-color-2 py-6">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 Competency & Pricing Insights. All rights reserved.</p>
+            <p class="text-sm mt-2">Combined interactive guide based on "The Transformative Value Propositions of Digitizing Competency and Assessment Processes" and "Strategic Feature Pricing for SaaS Product Managers."</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Global Data for all sections ---
+            const appData = {
+                // Data from Comptency Value Propositions.html
+                comparisonTable: [
+                    { aspect: 'Progression', traditional: 'Based on time (semesters/years)', digital: 'Based on demonstrated mastery' },
+                    { aspect: 'Learning Pace', traditional: 'Fixed for entire class', digital: 'Individual to each learner' },
+                    { aspect: 'Focus', traditional: 'Completing the curriculum / General aptitude', digital: 'Mastering specific competencies / Job-relevant skills' },
+                    { aspect: 'Data Collection', traditional: 'Manual, limited, fragmented', digital: 'Real-time, comprehensive, integrated' },
+                    { aspect: 'Feedback', traditional: 'Delayed, infrequent, less personalized', digital: 'Timely, continuous, personalized' },
+                    { aspect: 'Bias', traditional: 'Prone to bias and subjectivity', digital: 'Reduced bias, objective, structured criteria' },
+                    { aspect: 'Scalability', traditional: 'Limited, resource-intensive for large scale', digital: 'Highly scalable, standardized evaluations' },
+                    { aspect: 'Cost', traditional: 'High hidden costs (manual labor, errors)', digital: 'Reduced operational costs, significant ROI' },
+                    { aspect: 'User Experience', traditional: 'Cumbersome, administrative burden, low engagement', digital: 'Intuitive, mobile-friendly, high engagement' },
+                    { aspect: 'Strategic Value', traditional: 'Administrative, reactive, compliance-focused', digital: 'Strategic, proactive, talent optimization' }
+                ],
+                valuePropositions: [
+                    { id: 'efficiency', title: 'Enhanced Efficiency & Streamlining', icon: '⚡️', content: "Digitizing competency and assessment processes fundamentally transforms organizational efficiency by automating traditionally labor-intensive tasks and streamlining workflows. Digital platforms significantly automate the competency evaluation process, leading to substantial savings in both time and financial resources. By offloading repetitive tasks, professionals can focus on value-added activities like strategic planning and talent development, maximizing the impact of HR as a strategic business partner." },
+                    { id: 'data', title: 'Superior Data Insights', icon: '📊', content: "One of the most compelling value propositions lies in the unparalleled depth and accessibility of data insights, fundamentally transforming organizational decision-making. Digital platforms offer real-time visibility into skills and development, collecting diverse forms of work and achievements. This comprehensive data empowers organizations to gain deep, actionable insights into their employees' abilities, identify skill gaps, and make informed, precise decisions that provide a significant competitive advantage." },
+                    { id: 'talent', title: 'Optimized Talent Development', icon: '🌱', content: "Digitization is pivotal for optimizing talent development and enabling robust strategic workforce planning. It provides a starting point for comprehensive employee growth plans, supports continuous feedback cycles, and enables tailored training aligned with business goals. When employees are provided with structured development opportunities, they feel more valued, leading to higher job satisfaction, reduced turnover, and the ability to cultivate talent from within." },
+                    { id: 'scalability', title: 'Scalability, Consistency & Compliance', icon: '⚖️', content: "Digitizing provides substantial improvements in scalability, consistency, and compliance. Unlike traditional methods, digital assessments use structured criteria to ensure fairness and consistency across the organization, reducing bias. They facilitate standardized evaluations across diverse teams and geographical locations and help ensure strict compliance with industry regulations through verifiable digital credentials and robust tracking." },
+                    { id: 'cost', title: 'Significant Cost Reduction', icon: '💰', content: "The financial benefits are substantial, leading to significant cost reductions and optimized resource utilization. AI-driven solutions reduce hidden costs by automating processes and minimizing training needs. The transition away from manual, paper-based processes and the increase in internal mobility directly reduce operational and recruitment costs, allowing resources to be redirected towards more strategic, value-generating initiatives." },
+                    { id: 'ux', title: 'Elevated User Experience & Engagement', icon: '❤️', content: "A crucial, yet often underestimated, value is the significant enhancement of user experience (UX) and employee engagement. Digital software is designed to be accessible and user-friendly across all devices. Personalized assessments, consolidated systems, and a commitment to accessibility for all individuals contribute to a positive digital employee experience, which directly impacts satisfaction, productivity, and retention." }
+                ],
+                benefitsData: [
+                    { label: 'Time Reduction (Resource Mgmt)', value: 40, type: 'time', source: 'Gartner' },
+                    { label: 'Time Reduction (Evaluation)', value: 40, type: 'time', source: 'Mid-sized retail co.' },
+                    { label: 'Time Reduction (Admin Tasks)', value: 25, type: 'time', source: 'Forrester' },
+                    { label: 'Improved Decision Speed', value: 50, type: 'time', source: 'Financial services bank' },
+                    { label: 'Hiring Time Reduction', value: 30, type: 'time', source: 'Gartner' },
+                    { label: 'Talent Acquisition Speeds', value: 25, type: 'time', source: 'Amazon' },
+                    { label: 'Annual Savings (Tech)', value: 400, type: 'cost', source: 'Fortune 500 Tech Co. ($K)'},
+                    { label: 'Recruitment Cost Reduction', value: 30, type: 'cost', source: 'Mid-sized retail co.' },
+                    { label: 'Operational Cost Reduction', value: 30, type: 'cost', source: 'McKinsey' },
+                    { label: 'Annual Savings (Finance)', value: 250, type: 'cost', source: 'Financial services bank ($K)' },
+                    { label: 'Productivity Increase', value: 25, type: 'quality', source: 'Fortune 500 tech co.' },
+                    { label: 'Employee Retention Rate', value: 25, type: 'quality', source: 'Forrester' },
+                    { label: 'Candidate Quality Improvement', value: 40, type: 'quality', source: 'Gartner' },
+                ],
+                enablers: [
+                    { title: 'AI-Powered Tools', icon: '🤖', description: 'Automates scoring, provides predictive insights, and generates personalized learning paths.' },
+                    { title: 'Analytics Dashboards', icon: '📈', description: 'Provides real-time, visual tracking of progress and generates in-depth reports for data-driven decisions.' },
+                    { title: 'Digital Credentials', icon: '📜', description: 'Offers secure, verifiable, and portable proof of skills and achievements, often using blockchain.' },
+                    { title: 'Secure Monitoring', icon: '🛡️', description: 'Ensures assessment integrity through proctoring, secure authentication, and fraud detection.' },
+                    { title: 'Custom Frameworks', icon: '🎨', description: 'Allows tailoring of competency models, templates, and workflows to specific organizational needs.' },
+                    { title: 'Mobile Access', icon: '📱', description: 'Enables access to assessments and learning materials from any device, anywhere, anytime.' },
+                    { title: 'System Integration', icon: '🔗', description: 'Connects with HRIS, LMS, and other business systems for a unified, holistic talent ecosystem.' },
+                    { title: 'User Experience', icon: '🧑‍💻', description: 'Focuses on intuitive, accessible, and engaging interfaces to drive adoption and satisfaction.' }
+                ],
+
+                // Data from Competncy Pricing Strategy.html
+                pricingStrategyData: {
+                    wtpMethods: [
+                        { name: 'Direct Surveys', pros: 'Simple to implement, quick to gather data.', cons: 'Prone to bias, may not reflect true behavior.', use_case: 'Quick pulse checks and gathering qualitative feedback.' },
+                        { name: 'Van Westendorp PSM', pros: 'Identifies an acceptable price range, useful in early stages.', cons: 'Can be repetitive, may not perfectly translate to sales.', use_case: 'Early-stage development to find a broad price range.' },
+                        { name: 'Conjoint Analysis', pros: 'Simulates real buying decisions, quantifies WTP for individual features.', cons: 'Complex and can be costly to implement.', use_case: 'Optimizing feature bundling and tiered plans.' },
+                        { name: 'Behavioral Data', pros: 'Based on real-world actions, objective.', cons: 'Requires historical data, not for entirely new features.', use_case: 'Validating findings from other methods.' },
+                    ],
+                    pricingModels: [
+                        { name: 'Feature-Based', desc: 'Customers select and pay for the specific features they need. Often used for premium add-ons.' },
+                        { name: 'Tiered Pricing', desc: 'Offers multiple packages (e.g., Good, Better, Best) with increasing features and price. Most common model.' },
+                        { name: 'Usage-Based', desc: 'Charges based on consumption (e.g., per API call, GB of storage). Aligns cost with value.' },
+                        { name: 'Hybrid Pricing', desc: 'Blends models, like a base subscription with usage-based add-ons. Offers flexibility.' },
+                        { name: 'Freemium', desc: 'A free, limited version to attract users, with an upgrade path to paid, premium features.' },
+                        { name: 'Per-User Pricing', desc: 'A simple model where cost is based on the number of users or "seats".' },
+                    ],
+                    bundlingStrategies: [
+                        { name: 'Pure Bundling', desc: 'Products are only sold as a bundle (e.g., Microsoft Office).' },
+                        { name: 'Mixed Bundling', desc: 'Products are available individually AND as a bundle (e.g., Adobe Creative Cloud apps vs. suite).' },
+                        { name: 'Cross-Sell Bundling', desc: 'Combining complementary products that enhance one another (e.g., hosting + domain name).' },
+                    ],
+                    saasMetrics: [
+                        { name: 'MRR/ARR', desc: 'Monthly/Annual Recurring Revenue. The lifeblood of a SaaS business.' },
+                        { name: 'NRR', desc: 'Net Revenue Retention. Measures revenue from existing customers, including upsells and churn.' },
+                        { name: 'CLV', desc: 'Customer Lifetime Value. The total revenue you expect from a customer over their lifetime. Should be >3x CAC.' },
+                        { name: 'CAC', desc: 'Customer Acquisition Cost. The cost to acquire a new customer.' },
+                    ],
+                    disruptionStrategies: [
+                        { name: 'Clear Tier Differentiation', desc: 'Ensure the value difference between tiers is clear and justifies the price gap.' },
+                        { name: 'Feature Fences', desc: 'Strategically limit access to premium features in lower tiers to encourage upgrades.' },
+                        { name: 'Grandfathering', desc: 'Allow existing customers to keep their current price, rewarding loyalty but potentially limiting ARPU growth.' },
+                        { name: 'Strategic Add-ons', desc: 'Offer new features as optional add-ons rather than forcing a plan change.' },
+                    ],
+                    optimizationTabs: {
+                        'ab-testing': {
+                            title: 'A/B Testing: The Data-Driven Approach',
+                            content: `<p class="text-text-color-2 mb-6">A/B testing removes guesswork by comparing two price points with different audience segments. It's a continuous "market listening" mechanism to adapt to changing trends. Remember to test one variable at a time and run tests long enough for statistical significance.</p>
+                            <h4 class="font-semibold text-lg mb-2">Key Steps:</h4>
+                            <ol class="list-decimal list-inside space-y-2 text-text-color-1">
+                                <li>Set clear objectives (e.g., increase conversion, boost ARPU).</li>
+                                <li>Formulate a focused hypothesis (e.g., "Raising price by 10% will increase revenue").</li>
+                                <li>Create variants (Control vs. Variation).</li>
+                                <li>Run the test with segmented audiences.</li>
+                                <li>Analyze results against key metrics (Conversion, ARPU, Churn).</li>
+                                <li>Implement the winning price and repeat.</li>
+                            </ol>`,
+                        },
+                        'pilots': {
+                            title: 'Pilot Programs: Real-World Validation',
+                            content: `<p class="text-text-color-2 mb-6">Pilots test a new feature and its pricing on a small, controlled group of users before a full launch. They reduce risk and provide invaluable qualitative feedback and real-world usage data, especially for complex B2B features.</p>
+                            <h4 class="font-semibold text-lg mb-2">Key Benefits:</h4>
+                            <ul class="list-disc list-inside space-y-2 text-text-color-1">
+                                <li>Validates product-market fit and projected ROI.</li>
+                                <li>Identifies which customer segments derive the most value.</li>
+                                <li>Uncovers unforeseen issues (e.g., support load, integration challenges).</li>
+                                <li>Provides real-world objections and feedback to fuel sales enablement.</li>
+                            </ul>`,
+                        },
+                        'feedback': {
+                            title: 'Feedback Loops: The Engine of Iteration',
+                            content: `<p class="text-text-color-2 mb-6">Pricing is dynamic. Robust feedback loops ensure your product evolves with user needs. Integrate both quantitative data (the "what") and qualitative feedback (the "why") for a holistic view.</p>
+                            <h4 class="font-semibold text-lg mb-2">The Continuous Cycle:</h4>
+                            <ol class="list-decimal list-inside space-y-2 text-text-color-1">
+                                <li><strong>Collect:</strong> Gather feedback from multiple channels (surveys, support tickets, interviews).</li>
+                                <li><strong>Analyze:</strong> Identify patterns and recurring themes related to price and value.</li>
+                                <li><strong>Implement:</strong> Make data-driven changes to pricing, packaging, or features.</li>
+                                <li><strong>Communicate:</strong> Close the loop by informing users their feedback led to improvements.</li>
+                                <li><strong>Repeat:</strong> Continuously monitor and iterate.</li>
+                            </ol>`,
+                        }
+                    },
+                    communicationChecklist: [
+                        { item: 'Explain the "WHY"', desc: 'Clearly link the price to new value and benefits for the customer.' },
+                        { item: 'Present Details Clearly', desc: 'Use tables or visuals to show the new pricing structure.' },
+                        { item: 'Provide a Timeline', desc: 'Give customers reasonable notice before the change takes effect.' },
+                        { item: 'Reward Loyalty', desc: 'Offer grandfathering or discounts to existing customers to maintain goodwill.' },
+                        { item: 'Communicate with Confidence', desc: 'Be direct and avoid apologies for charging for value.' },
+                    ]
+                },
+
+                // Data from Comptency Value Based Pricing.html
+                calculatorData: {
+                    roles: [
+                        { id: 'rn', name: 'Registered Nurse (RN)', avgHourlyRate: 42.80, employeesPer100Beds: 25, isClinical: true, isAdmin: false },
+                        { id: 'lpn', name: 'Licensed Practical Nurse (LPN)', avgHourlyRate: 27.07, employeesPer100Beds: 20, isClinical: true, isAdmin: false },
+                        { id: 'cna', name: 'Certified Nursing Assistant (CNA)', avgHourlyRate: 40, employeesPer100Beds: 40, isClinical: true, isAdmin: false },
+                        { id: 'manager', name: 'Nurse Educator / Manager', avgHourlyRate: 48.50, employeesPer100Beds: 2, isClinical: false, isAdmin: true },
+                        { id: 'admin', name: 'Facility Administrator', avgHourlyRate: 55.00, employeesPer100Beds: 1, isClinical: false, isAdmin: true }
+                    ],
+                    valueDrivers: {
+                        adminHoursSavedPerNurse: { hours: 1.75 },
+                        auditPreparedness: { annualValue: 5000 },
+                        inHouseCompetencyCost: { annualValue: 5000 },
+                        improvedEmployeeExperience: { annualValue: 12 }
+                    },
+                    perUserPricing: {
+                        inService: { price: 45, enabled: true },
+                        newHire: { price: 15, enabled: true },
+                        ceu: { price: 5, enabled: true },
+                        competency: { price: 60, enabled: false },
+                        antiHarassment: { price: 10, enabled: false }
+                    },
+                    valueBasedPricing: {
+                        percentage: 25
+                    }
+                }
+            };
+
+            let calculatorState; // State for the calculator section
+
+            // --- Helper Functions ---
+            const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+
+            // --- Navigation Logic ---
+            const header = document.getElementById('main-header');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileNavLinks = document.querySelectorAll('#mobile-menu .nav-link');
+
+            const observerOptions = { root: null, rootMargin: `-${header.offsetHeight}px`, threshold: 0.3 };
+
+            const sectionObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        // Special handling for the new header divs
+                        let targetId = id;
+                        if (id.endsWith('-header')) {
+                             targetId = id; // Keep the header ID for navigation highlighting
+                        } else if (entry.target.previousElementSibling && entry.target.previousElementSibling.id && entry.target.previousElementSibling.id.endsWith('-header')) {
+                            targetId = entry.target.previousElementSibling.id; // If section is active, highlight its preceding header link
+                        }
+
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${targetId}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                        mobileNavLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${targetId}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            // Observe both the main sections and the new header divs
+            sections.forEach(section => sectionObserver.observe(section));
+            document.querySelectorAll('.main-section-header').forEach(headerDiv => sectionObserver.observe(headerDiv));
+
+
+            mobileMenuButton.addEventListener('click', () => {
+                const isExpanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
+                mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
+                mobileMenu.classList.toggle('hidden');
+                mobileMenuButton.querySelector('svg:first-child').classList.toggle('hidden');
+                mobileMenuButton.querySelector('svg:last-child').classList.toggle('hidden');
+            });
+
+            mobileNavLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuButton.setAttribute('aria-expanded', 'false');
+                    mobileMenuButton.querySelector('svg:first-child').classList.remove('hidden');
+                    mobileMenuButton.querySelector('svg:last-child').classList.add('hidden');
+                });
+            });
+
+
+            // --- Value Propositions Section Logic (from Comptency Value Propositions.html) ---
+            const comparisonTableBody = document.getElementById('comparison-table-body');
+            appData.comparisonTable.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b border-border-color';
+                row.innerHTML = `
+                    <th scope="row" class="px-6 py-4 font-medium text-text-color-1 whitespace-nowrap">${item.aspect}</th>
+                    <td class="px-6 py-4">${item.traditional}</td>
+                    <td class="px-6 py-4">${item.digital}</td>
+                `;
+                comparisonTableBody.appendChild(row);
+            });
+
+            const valueCardsGrid = document.getElementById('value-cards-grid');
+            appData.valuePropositions.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card card-interactive cursor-pointer';
+                card.dataset.id = item.id;
+                card.innerHTML = `
+                    <div class="text-4xl mb-4">${item.icon}</div>
+                    <h4 class="text-xl font-bold text-text-color-1">${item.title}</h4>
+                `;
+                valueCardsGrid.appendChild(card);
+            });
+
+            const enablersGrid = document.getElementById('enablers-grid');
+            appData.enablers.forEach(item => {
+                const enablerDiv = document.createElement('div');
+                enablerDiv.className = 'has-tooltip relative flex flex-col items-center';
+                enablerDiv.innerHTML = `
+                    <div class="bg-white rounded-full h-20 w-20 flex items-center justify-center shadow-lg text-4xl mb-4 border border-border-color">${item.icon}</div>
+                    <h5 class="font-semibold text-text-color-1">${item.title}</h5>
+                    <div class="tooltip absolute bottom-full mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2">${item.description}</div>
+                `;
+                enablersGrid.appendChild(enablerDiv);
+            });
+
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalClose = document.getElementById('modal-close');
+
+            valueCardsGrid.addEventListener('click', (e) => {
+                const card = e.target.closest('.card');
+                if (card) {
+                    const id = card.dataset.id;
+                    const data = appData.valuePropositions.find(item => item.id === id);
+                    if (data) {
+                        modalTitle.textContent = data.title;
+                        modalBody.textContent = data.content;
+                        modal.classList.remove('hidden');
+                    }
+                }
+            });
+
+            const closeModal = () => modal.classList.add('hidden');
+            modalClose.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            let benefitsChart;
+            const benefitsCtx = document.getElementById('benefitsChart').getContext('2d');
+            const chartFilters = document.getElementById('chart-filters');
+
+            const renderBenefitsChart = (filter = 'all') => {
+                const filteredData = filter === 'all'
+                    ? appData.benefitsData
+                    : appData.benefitsData.filter(d => d.type === filter);
+
+                const labels = filteredData.map(d => d.label.split(' '));
+                const dataPoints = filteredData.map(d => d.value);
+
+                if(benefitsChart) {
+                    benefitsChart.destroy();
+                }
+
+                benefitsChart = new Chart(benefitsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Benefit Value (%)',
+                            data: dataPoints,
+                            backgroundColor: 'var(--button-link-color)', /* Using CSS variable */
+                            borderColor: 'var(--text-link-color)',     /* Using CSS variable */
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'var(--border-color)'
+                                },
+                                ticks: {
+                                   callback: function(value, index, values) {
+                                       return value + (filteredData[index].label.includes('($K)') ? 'K' : '%');
+                                   }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        const point = filteredData[context.dataIndex];
+                                        const suffix = point.label.includes('($K)') ? 'K USD' : '%';
+                                        label += `${context.parsed.y} ${suffix}`;
+                                        return label;
+                                    },
+                                    afterLabel: function(context) {
+                                        return `Source: ${filteredData[context.dataIndex].source}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            chartFilters.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const filter = e.target.dataset.filter;
+                    document.querySelectorAll('#chart-filters .filter-btn').forEach(btn => {
+                        btn.classList.remove('bg-button-link-color', 'text-white');
+                        btn.classList.add('bg-background-color-2', 'text-text-color-2');
+                    });
+                    e.target.classList.add('bg-button-link-color', 'text-white');
+                    e.target.classList.remove('bg-background-color-2', 'text-text-color-2');
+                    renderBenefitsChart(filter);
+                }
+            });
+            renderBenefitsChart(); // Initial render for value propositions chart
+
+
+            // --- Pricing Calculator Section Logic (from Comptency Value Based Pricing.html) ---
+            let calculatorAppState; // State for the calculator
+            const numberOfFacilitiesEl = document.getElementById('numberOfFacilities');
+            const bedsPerFacilityEl = document.getElementById('bedsPerFacility');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const resultsContainer = document.getElementById('results-container');
+            const pricingSectionsContainer = document.getElementById('pricing-sections');
+            const employeeCountsContainer = document.getElementById('employee-counts-container');
+            const employeeCountsList = document.getElementById('employee-counts-list');
+
+            function initializeCalculatorState() {
+                calculatorAppState = JSON.parse(JSON.stringify(appData.calculatorData)); // Deep copy initial data
+            }
+
+            function getEmployeeCounts() {
+                const facilities = parseInt(numberOfFacilitiesEl.value, 10) || 0;
+                const beds = parseInt(bedsPerFacilityEl.value, 10) || 0;
+                const totalBeds = facilities * beds;
+                const counts = {};
+                let totalUsers = 0;
+                calculatorAppState.roles.forEach(role => {
+                    const count = Math.round(totalBeds * (role.employeesPer100Beds / 100));
+                    counts[role.id] = count;
+                    totalUsers += count;
+                });
+                counts.total = totalUsers;
+                return counts;
+            }
+
+            function updateEmployeeCountsUI() {
+                const employeeCounts = getEmployeeCounts();
+                if (employeeCounts.total > 0 && (parseInt(numberOfFacilitiesEl.value, 10) > 0 && parseInt(bedsPerFacilityEl.value, 10) > 0)) {
+                    employeeCountsContainer.classList.remove('hidden');
+                } else {
+                    employeeCountsContainer.classList.add('hidden');
+                }
+                let html = '';
+                calculatorAppState.roles.forEach(role => {
+                    html += `<div class="flex justify-between"><span>${role.name}:</span> <span class="font-medium">${employeeCounts[role.id] || 0}</span></div>`;
+                });
+                html += `<div class="flex justify-between font-bold pt-1 border-t border-border-color"><span>Total:</span> <span>${employeeCounts.total || 0}</span></div>`;
+                employeeCountsList.innerHTML = html;
+            }
+
+            function updateCalculatorUI() {
+                const facilities = parseInt(numberOfFacilitiesEl.value, 10) || 0;
+                const employeeCounts = getEmployeeCounts();
+                let totalClinicalStaff = 0;
+                calculatorAppState.roles.forEach(role => {
+                    if (role.isClinical) totalClinicalStaff += employeeCounts[role.id];
+                });
+
+                if (!resultsContainer.querySelector('.animate-fade-in')) return; // Only update if results are already displayed
+
+                // Per User Pricing calculation and display update
+                const { competency, inService, ceu, newHire, antiHarassment } = calculatorAppState.perUserPricing;
+                const totalALaCartePricePerUser =
+                    (competency.enabled ? competency.price : 0) +
+                    (inService.enabled ? inService.price : 0) +
+                    (ceu.enabled ? ceu.price : 0) +
+                    (newHire.enabled ? newHire.price : 0) +
+                    (antiHarassment.enabled ? antiHarassment.price : 0);
+                const perUserAnnualSubscription = totalClinicalStaff > 0 ? totalALaCartePricePerUser * totalClinicalStaff : 0;
+                document.getElementById('a-la-carte-total').innerText = formatCurrency(perUserAnnualSubscription);
+                document.getElementById('a-la-carte-per-user-total').innerText = `(${formatCurrency(totalALaCartePricePerUser)}/user)`;
+
+                const totalInServicePriceEl = document.getElementById('total-inService-price');
+                if (totalInServicePriceEl) totalInServicePriceEl.innerText = formatCurrency(inService.price * totalClinicalStaff);
+
+                const totalNewHirePriceEl = document.getElementById('total-newHire-price');
+                if (totalNewHirePriceEl) totalNewHirePriceEl.innerText = formatCurrency(newHire.price * totalClinicalStaff);
+
+                const totalCeuPriceEl = document.getElementById('total-ceu-price');
+                if (totalCeuPriceEl) totalCeuPriceEl.innerText = formatCurrency(ceu.price * totalClinicalStaff);
+
+                const totalCompetencyPriceEl = document.getElementById('total-competency-price');
+                if (totalCompetencyPriceEl) totalCompetencyPriceEl.innerText = formatCurrency(competency.price * totalClinicalStaff);
+
+                const totalAntiHarassmentPriceEl = document.getElementById('total-antiHarassment-price');
+                if (totalAntiHarassmentPriceEl) totalAntiHarassmentPriceEl.innerText = formatCurrency(antiHarassment.price * totalClinicalStaff);
+
+                // Value-Based Pricing calculation and display update
+                const grandTotalEl = resultsContainer.querySelector('#grand-total-value');
+                const grandTotal = grandTotalEl ? parseFloat(grandTotalEl.dataset.value) : 0;
+                const { percentage } = calculatorAppState.valueBasedPricing;
+                const suggestedAnnualPrice = grandTotal * (percentage / 100);
+                const perFacilityPerMonthPrice = facilities > 0 ? suggestedAnnualPrice / facilities / 12 : 0;
+
+                document.getElementById('value-based-annual-price').innerText = formatCurrency(suggestedAnnualPrice);
+                document.getElementById('value-based-monthly-price').innerText = formatCurrency(perFacilityPerMonthPrice);
+                document.getElementById('value-share-display').innerText = `${percentage}%`;
+
+                const perUserCosts = totalClinicalStaff > 0 ? suggestedAnnualPrice / totalClinicalStaff : 0;
+                document.getElementById('value-based-per-user-cost').innerText = formatCurrency(perUserCosts);
+
+                const totalClinicalStaffDisplayEl = document.getElementById('total-clinical-staff-display');
+                if (totalClinicalStaffDisplayEl) {
+                    totalClinicalStaffDisplayEl.innerText = `${totalClinicalStaff}`;
+                }
+                const avgAdminSalaryEl = document.getElementById('admin-salary-display');
+                if (avgAdminSalaryEl) {
+                    let totalAdminCost = 0;
+                    let adminCount = 0;
+                    calculatorAppState.roles.forEach(role => {
+                        if (role.isAdmin) {
+                            totalAdminCost += employeeCounts[role.id] * role.avgHourlyRate;
+                            adminCount += employeeCounts[role.id];
+                        }
+                    });
+                    const avgAdminSalary = adminCount > 0 ? totalAdminCost / adminCount : 0;
+                    avgAdminSalaryEl.innerText = formatCurrency(avgAdminSalary);
+                }
+
+                // Update Competency Price slider based on Per User Costs
+                const newCompetencyPrice = Math.min(perUserCosts, 60); // Cap at 60
+                calculatorAppState.perUserPricing.competency.price = newCompetencyPrice;
+                const competencyPriceSlider = document.getElementById('competency-price');
+                const competencyPriceDisplay = document.getElementById('price-display-competency');
+                if (competencyPriceSlider && competencyPriceDisplay) {
+                    competencyPriceSlider.value = newCompetencyPrice;
+                    competencyPriceDisplay.innerText = formatCurrency(newCompetencyPrice);
+                }
+            }
+
+            function calculateAndRenderCalculator() {
+                const facilities = parseInt(numberOfFacilitiesEl.value, 10) || 0;
+                const beds = parseInt(bedsPerFacilityEl.value, 10) || 0;
+
+                if (facilities === 0 || beds === 0) {
+                    resultsContainer.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center text-text-color-2"><p class="mt-4">Please enter the number of facilities and beds.</p></div>`;
+                    pricingSectionsContainer.innerHTML = '';
+                    employeeCountsContainer.classList.add('hidden');
+                    return;
+                }
+
+                updateEmployeeCountsUI();
+                const employeeCounts = getEmployeeCounts();
+                let totalClinicalStaff = 0;
+                calculatorAppState.roles.forEach(role => {
+                    if (role.isClinical) totalClinicalStaff += employeeCounts[role.id];
+                });
+
+                let totalAdminCost = 0;
+                let adminCount = 0;
+                calculatorAppState.roles.forEach(role => {
+                    if (role.isAdmin) {
+                        totalAdminCost += employeeCounts[role.id] * role.avgHourlyRate;
+                        adminCount += employeeCounts[role.id];
+                    }
+                });
+                const avgAdminSalary = adminCount > 0 ? totalAdminCost / adminCount : 0;
+                const totalAdminTimeSavings = totalClinicalStaff * calculatorAppState.valueDrivers.adminHoursSavedPerNurse.hours * avgAdminSalary;
+
+                const totalInHouseCost = calculatorAppState.valueDrivers.inHouseCompetencyCost.annualValue * facilities;
+                const auditValue = calculatorAppState.valueDrivers.auditPreparedness.annualValue * facilities;
+                const employeeExperienceValue = calculatorAppState.valueDrivers.improvedEmployeeExperience.annualValue * totalClinicalStaff;
+
+                const grandTotal = totalAdminTimeSavings + totalInHouseCost + auditValue + employeeExperienceValue;
+
+                resultsContainer.innerHTML = `
+                    <div class="space-y-4 animate-fade-in">
+                        <div class="bg-highlight-color/10 border-l-4 border-highlight-color text-highlight-color-darken p-4 rounded-lg">
+                            <p class="font-bold text-lg">Total Estimated Value</p>
+                            <p id="grand-total-value" data-value="${grandTotal}" class="text-3xl font-bold">${formatCurrency(grandTotal)}</p>
+                        </div>
+                        <div class="space-y-3 pt-4">
+                            <div class="pb-3 border-b border-border-color last:border-b-0"><div class="flex justify-between items-baseline"><p class="text-md font-medium text-text-color-1">Enhanced Compliance, Data Insights and Audit Readiness</p><p class="text-lg font-semibold text-text-color-1">${formatCurrency(auditValue)}</p></div><p class="text-xs text-text-color-2 mt-1">Value of streamlined audit reporting and reduced compliance risk, per facility.</p></div>
+                            <div class="pb-3 border-b border-border-color last:border-b-0"><div class="flex justify-between items-baseline"><p class="text-md font-medium text-text-color-1">Administrative Time Savings</p><p class="text-lg font-semibold text-text-color-1">${formatCurrency(totalAdminTimeSavings)}</p></div><p class="text-xs text-text-color-2 mt-1">Value from reducing time spent on competency management, based on the number of clinical staff.</p></div>
+                            <div class="pb-3 border-b border-border-color last:border-b-0"><div class="flex justify-between items-baseline"><p class="text-md font-medium text-text-color-1">Proprietary Solutions and Operating Costs</p><p class="text-lg font-semibold text-text-color-1">${formatCurrency(totalInHouseCost)}</p></div><p class="text-xs text-text-color-2 mt-1">Estimated annual cost to build, maintain, and manage an in-house competency tracking system, per facility.</p></div>
+                            <div class="pb-3 border-b border-border-color last:border-b-0"><div class="flex justify-between items-baseline"><p class="text-md font-medium text-text-color-1">Improved Employee Development and Retention</p><p class="text-lg font-semibold text-text-color-1">${formatCurrency(employeeExperienceValue)}</p></div><p class="text-xs text-text-color-2 mt-1">Value from enhanced employee satisfaction, retention, and professional growth opportunities, per clinical staff.</p></div>
+                        </div>
+                    </div>`;
+
+                renderPricingSections(totalClinicalStaff, avgAdminSalary);
+                updateCalculatorUI();
+            }
+
+            function renderPricingSections(totalClinicalStaff, avgAdminSalary) {
+                pricingSectionsContainer.innerHTML = `
+                    <div class="lg:col-span-2 space-y-8">
+                        <!-- Assumptions Section -->
+                        <div class="card animate-fade-in">
+                            <h3 class="text-2xl font-semibold text-text-color-1 mb-6">3. Calculation Assumptions</h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <h4 class="font-semibold text-lg text-text-color-1 mb-3">Staffing & Salary Assumptions</h4>
+                                    <div class="grid grid-cols-3 gap-4 items-center mb-2 text-sm font-medium text-text-color-2">
+                                        <span>Role</span>
+                                        <span class="text-right">Avg. Employees per 100 Beds</span>
+                                        <span class="text-right">Avg. Hourly Salary Rate ($)</span>
+                                    </div>
+                                    <div id="assumptions-roles-container" class="space-y-2"></div>
+                                </div>
+                                <hr class="border-border-color"/>
+                                <div>
+                                    <h4 class="font-semibold text-lg text-text-color-1 mb-2">General Value Drivers</h4>
+                                    <div id="assumptions-drivers-container" class="space-y-2"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bundle Research Details Section -->
+                        <div class="card animate-fade-in">
+                            <h3 class="text-2xl font-semibold text-text-color-1 mb-6">4. Bundle Research Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-text-color-2">
+                                <div class="flex flex-col">
+                                    <p>46 contracts indicating facilities</p>
+                                    <p>46 inservice.</p>
+                                    <p>40 Included O&O</p>
+                                </div>
+                                <div class="flex flex-col">
+                                    <p>35 Include Orientation</p>
+                                    <p>39 include CNE</p>
+                                    <p>20 Include Competency</p>
+                                    <p>1 includes AH - Altira Health Group</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bundled Facility Pricing Section -->
+                        <div class="card animate-fade-in">
+                            <h3 class="text-2xl font-semibold text-text-color-1 mb-6">5. Bundled Facility Pricing</h3>
+                            <div class="bg-text-link-color text-black p-6 rounded-xl shadow-lg mb-6 text-center">
+                                <h4 class="text-3xl font-bold mb-2">Bundled Facility Pricing</h4>
+                                <p class="text-lg"><span class="font-semibold">Details:</span> 100 beds, 88 users</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <!-- Basic Package Features Card -->
+                                <div class="card bg-white">
+                                    <h4 class="text-xl font-medium font-bold text-text-color-1 mb-4">Basic Package</h4>
+                                    <p class="text-lg font-semibold text-button-link-color mb-4">$3000 ($34/user)</p>
+                                    <ul class="text-text-color-2 text-sm space-y-2">
+                                        <li class="pb-2 border-b border-border-color">Live Multilingual End-User Support</li>
+                                        <li class="pb-2 border-b border-border-color">Mobile Optimized Platform</li>
+                                        <li class="pb-2 border-b border-border-color">Online Forms and E-sign</li>
+                                        <li class="pb-2 border-b border-border-color">Scheduled SMS & Email Reminders</li>
+                                        <li class="pb-2 border-b border-border-color">Unlimited User Access & Full Course Library</li>
+                                        <li class="pb-2 border-b border-border-color">Analytics Dashboard</li>
+                                        <li class="pb-2 border-b border-border-color">Dedicated Account Manager</li>
+                                        <li class="pb-2 border-b border-border-color">Document Uploads</li>
+                                        <li class="pb-2 border-b border-border-color">E-sign Functionality & Online Forms</li>
+                                        <li class="pb-2 border-b border-border-color">EVV Training</li>
+                                        <li class="pb-2 border-b border-border-color">Certificate Management and Delivery</li>
+                                        <li class="pb-2 border-b border-border-color">Annual In-Service Compliance Training</li>
+                                        <li class="pb-2 border-b border-border-color">CEU Program Access</li>
+                                        <li class="pb-2">New Hire Orientation Training</li>
+                                    </ul>
+                                </div>
+
+                                <!-- Competency Package Features Card -->
+                                <div class="card bg-white">
+                                    <h4 class="text-xl font-medium font-bold text-text-color-1 mb-4">Competency Package</h4>
+                                    <p class="text-lg font-semibold text-button-link-color mb-4">$3775 - $4140 ($42 - $47/user)</p>
+                                    <ul class="text-text-color-2 text-sm space-y-2">
+                                        <li class="pb-2 border-b border-border-color">Live Multilingual End-User Support</li>
+                                        <li class="pb-2 border-b border-border-color">Mobile Optimized Platform</li>
+                                        <li class="pb-2 border-b border-border-color">Online Forms and E-sign</li>
+                                        <li class="pb-2 border-b border-border-color">Scheduled SMS & Email Reminders</li>
+                                        <li class="pb-2 border-b border-border-color">Unlimited User Access & Full Course Library</li>
+                                        <li class="pb-2 border-b border-border-color">Analytics Dashboard</li>
+                                        <li class="pb-2 border-b border-border-color">Dedicated Account Manager</li>
+                                        <li class="pb-2 border-b border-border-color">Document Uploads</li>
+                                        <li class="pb-2 border-b border-border-color">E-sign Functionality & Online Forms</li>
+                                        <li class="pb-2 border-b border-border-color">EVV Training</li>
+                                        <li class="pb-2 border-b border-border-color">Certificate Management and Delivery</li>
+                                        <li class="pb-2 border-b border-border-color">Annual In-Service Compliance Training</li>
+                                        <li class="pb-2 border-b border-border-color">CEU Program Access</li>
+                                        <li class="pb-2 border-b border-border-color">New Hire Orientation Training</li>
+                                        <li class="pb-2 font-bold">Competency Evaluations</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Value Based Pricing Section -->
+                        <div class="card animate-fade-in">
+                           <h3 class="text-2xl font-semibold text-text-color-1 mb-6">6. Value-Based Pricing for Competencies</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="pricing-percentage" class="block text-sm font-medium text-text-color-2">Value Share Percentage: <span id="value-share-display" class="font-bold text-button-link-color"></span></label>
+                                    <p class="text-xs text-text-color-2 mb-2">Adjust the percentage of the total value you want to propose as the price.</p>
+                                    <input id="pricing-percentage" type="range" min="0" max="100" step="1" value="25" class="w-full h-2 bg-background-color-2 rounded-lg appearance-none cursor-pointer" />
+                                </div>
+                                <div class="bg-background-color-4 border-l-4 border-button-link-color text-text-color-1 p-4 rounded-lg space-y-2">
+                                    <div class="flex justify-between items-center pb-2 border-b border-border-color">
+                                        <p class="font-semibold">Suggested Annual Price</p>
+                                        <p id="value-based-annual-price" class="text-xl font-bold"></p>
+                                    </div>
+                                    <div class="mt-2 flex justify-between text-sm">
+                                        <p>Per Facility / Month:</p>
+                                        <p id="value-based-monthly-price" class="font-semibold"></p>
+                                    </div>
+                                    <div class="mt-2 flex justify-between text-sm">
+                                        <p>Per User Costs:</p>
+                                        <p id="value-based-per-user-cost" class="font-semibold"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Per User Pricing Section -->
+                        <div class="card animate-fade-in">
+                            <h3 class="text-2xl font-semibold text-text-color-1 mb-6">7. Per User Pricing</h3>
+                            <div id="per-user-sliders-container" class="space-y-4"></div>
+                            <div class="bg-highlight-color/10 border-l-4 border-highlight-color text-highlight-color-darken p-4 rounded-lg space-y-2 mt-4">
+                                <div class="flex justify-between items-center">
+                                    <p class="font-semibold">A La Carte Annual Total <span class="text-sm text-text-color-2 ml-1" id="a-la-carte-per-user-total"></span></p>
+                                    <p id="a-la-carte-total" class="text-xl font-bold"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                attachCalculatorEventListeners(totalClinicalStaff, avgAdminSalary);
+            }
+
+            function attachCalculatorEventListeners(totalClinicalStaff, avgAdminSalary) {
+                // Assumptions - Roles: Event listeners for staffing and salary inputs
+                const rolesContainer = document.getElementById('assumptions-roles-container');
+                rolesContainer.innerHTML = '';
+                calculatorAppState.roles.forEach(role => {
+                    const el = document.createElement('div');
+                    el.className = 'grid grid-cols-3 gap-4 items-center';
+                    el.innerHTML = `
+                        <label for="rate-${role.id}" class="text-sm text-text-color-2 col-span-1">${role.name}</label>
+                        <input type="number" id="ratio-${role.id}" name="employeesPer100Beds" value="${role.employeesPer100Beds}" class="w-full text-right px-2 py-1 border border-border-color rounded-md shadow-sm sm:text-sm"/>
+                        ${role.isAdmin ?
+                            `<input type="number" step="0.01" id="rate-${role.id}" name="avgHourlyRate" value="${role.avgHourlyRate}" class="w-full text-right px-2 py-1 border border-border-color rounded-md shadow-sm sm:text-sm"/>` :
+                            `<div class="text-right text-sm text-gray-400 pr-2">N/A</div>`
+                        }
+                    `;
+                    rolesContainer.appendChild(el);
+                    el.querySelector(`#ratio-${role.id}`).addEventListener('input', (e) => {
+                        const roleToUpdate = calculatorAppState.roles.find(r => r.id === role.id);
+                        roleToUpdate.employeesPer100Beds = parseFloat(e.target.value) || 0;
+                        updateEmployeeCountsUI();
+                        if (resultsContainer.querySelector('.animate-fade-in')) updateCalculatorUI();
+                    });
+                    if (role.isAdmin) {
+                        el.querySelector(`#rate-${role.id}`).addEventListener('input', (e) => {
+                            const roleToUpdate = calculatorAppState.roles.find(r => r.id === role.id);
+                            roleToUpdate.avgHourlyRate = parseFloat(e.target.value) || 0;
+                            if (resultsContainer.querySelector('.animate-fade-in')) updateCalculatorUI();
+                        });
+                    }
+                });
+
+                // Assumptions - Drivers: Event listeners for value driver inputs
+                const driversContainer = document.getElementById('assumptions-drivers-container');
+                driversContainer.innerHTML = '';
+                const driverConfigs = [
+                    { key: 'adminHoursSavedPerNurse', label: 'Annual Admin Hours Saved per Nurse', type: 'hours', step: 0.5, tooltip: `Default: ${appData.calculatorData.valueDrivers.adminHoursSavedPerNurse.hours} hrs (10 Comp/User/year, results in 10min saved per competency). Total clinical staff x Hours Saved * administrative staff's average salary.` },
+                    { key: 'inHouseCompetencyCost', label: 'Proprietary Solutions and Operating Costs ($/facility)', type: 'annualValue', step: 1000, tooltip: `Default: ${formatCurrency(appData.calculatorData.valueDrivers.inHouseCompetencyCost.annualValue)}. The estimated annual cost to build, maintain, and manage a competency tracking system internally, per facility.` },
+                    { key: 'auditPreparedness', label: 'Enhanced Compliance, Data Insights and Audit Readiness ($/facility)', type: 'annualValue', step: 1, tooltip: `Default: ${formatCurrency(appData.calculatorData.valueDrivers.auditPreparedness.annualValue)}. This value is multiplied by the 'Number of Facilities' to calculate the total value of improved compliance and audit preparedness.` },
+                    { key: 'improvedEmployeeExperience', label: 'Improved Employee Development and Retention ($/facility)', type: 'annualValue', step: 12, tooltip: `Default: $${appData.calculatorData.valueDrivers.improvedEmployeeExperience.annualValue} per clinical staff ($1 / month). This value is multiplied by the 'total clinical staff' to calculate the total value from enhanced employee satisfaction, retention, and professional growth opportunities.` }
+                ];
+                driverConfigs.forEach(config => {
+                    const el = document.createElement('div');
+                    el.className = 'flex items-center justify-between';
+                    let valueDisplayPrefix = '';
+
+                    if (config.key === 'inHouseCompetencyCost' || config.key === 'auditPreparedness' || config.key === 'improvedEmployeeExperience') {
+                        valueDisplayPrefix = '$';
+                    }
+
+                    el.innerHTML = `
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-2">
+                                <label for="${config.key}" class="text-sm text-text-color-2">${config.label}</label>
+                                <div class="relative group">
+                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-gray-400"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                   <div class="tooltip">${config.tooltip}</div>
+                                </div>
+                            </div>
+                            ${config.key === 'adminHoursSavedPerNurse' ? `<span class="text-xs text-text-color-2 ml-1 block">(Total Clinical Staff: <span id="total-clinical-staff-display">${totalClinicalStaff}</span>)<br>(Avg. Admin Salary: <span id="admin-salary-display">${formatCurrency(avgAdminSalary)}</span>)</span>` : ''}
+                        </div>
+                        <div class="flex items-center">
+                            ${valueDisplayPrefix}<input type="number" step="${config.step}" id="${config.key}" name="${config.type}" value="${calculatorAppState.valueDrivers[config.key][config.type]}" class="w-24 text-right px-2 py-1 border border-border-color rounded-md shadow-sm sm:text-sm"/>
+                        </div>
+                    `;
+                    driversContainer.appendChild(el);
+                    el.querySelector(`#${config.key}`).addEventListener('input', e => {
+                        calculatorAppState.valueDrivers[config.key][config.type] = parseFloat(e.target.value) || 0;
+                        if (resultsContainer.querySelector('.animate-fade-in')) updateCalculatorUI();
+                    });
+                });
+
+                // Per User Pricing Sliders: Event listeners for individual pricing components
+                const perUserSlidersContainer = document.getElementById('per-user-sliders-container');
+                perUserSlidersContainer.innerHTML = '';
+                const sliderConfigs = [
+                    { id: 'inService', label: 'In-Service Training', min: 0, max: 60, step: 1, price: calculatorAppState.perUserPricing.inService.price, enabled: calculatorAppState.perUserPricing.inService.enabled, setter: (val) => calculatorAppState.perUserPricing.inService.price = val, enabler: (val) => calculatorAppState.perUserPricing.inService.enabled = val },
+                    { id: 'newHire', label: 'New Hire Orientation', min: 0, max: 60, step: 1, price: calculatorAppState.perUserPricing.newHire.price, enabled: calculatorAppState.perUserPricing.newHire.enabled, setter: (val) => calculatorAppState.perUserPricing.newHire.price = val, enabler: (val) => calculatorAppState.perUserPricing.newHire.enabled = val },
+                    { id: 'ceu', label: 'CEUs', min: 0, max: 60, step: 1, price: calculatorAppState.perUserPricing.ceu.price, enabled: calculatorAppState.perUserPricing.ceu.enabled, setter: (val) => calculatorAppState.perUserPricing.ceu.price = val, enabler: (val) => calculatorAppState.perUserPricing.ceu.enabled = val },
+                    { id: 'competency', label: 'Competency Price', min: 0, max: 60, step: 1, price: calculatorAppState.perUserPricing.competency.price, enabled: calculatorAppState.perUserPricing.competency.enabled, setter: (val) => calculatorAppState.perUserPricing.competency.price = val, enabler: (val) => calculatorAppState.perUserPricing.competency.enabled = val },
+                    { id: 'antiHarassment', label: 'Anti-Harassment', min: 0, max: 60, step: 1, price: calculatorAppState.perUserPricing.antiHarassment.price, enabled: calculatorAppState.perUserPricing.antiHarassment.enabled, setter: (val) => calculatorAppState.perUserPricing.antiHarassment.price = val, enabler: (val) => calculatorAppState.perUserPricing.antiHarassment.enabled = val }
+                ];
+
+                sliderConfigs.forEach(config => {
+                    const sliderDiv = document.createElement('div');
+                    sliderDiv.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="enable-${config.id}" ${config.enabled ? 'checked' : ''} class="h-4 w-4 rounded border-border-color text-button-link-color focus:ring-button-link-color"/>
+                                <label for="${config.id}-price" class="block text-sm font-medium ${config.enabled ? 'text-text-color-2' : 'text-gray-400'}">${config.label} / User / Year:</label>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-button-link-color" id="price-display-${config.id}">${formatCurrency(config.price)}</span>
+                                <input id="${config.id}-price" type="range" min="0" max="60" step="1" value="${config.price}" ${!config.enabled ? 'disabled' : ''} class="w-24 h-2 bg-background-color-2 rounded-lg appearance-none cursor-pointer disabled:bg-gray-100" />
+                                <span class="text-sm text-text-color-2 ml-1">(Total: <span id="total-${config.id}-price" class="font-semibold"></span>)</span>
+                            </div>
+                        </div>
+                    `;
+                    perUserSlidersContainer.appendChild(sliderDiv);
+
+                    sliderDiv.querySelector(`#enable-${config.id}`).addEventListener('change', (e) => {
+                        config.enabler(e.target.checked);
+                        sliderDiv.querySelector(`#${config.id}-price`).disabled = !e.target.checked;
+                        updateCalculatorUI();
+                    });
+                    sliderDiv.querySelector(`#${config.id}-price`).addEventListener('input', (e) => {
+                        config.setter(parseFloat(e.target.value));
+                        document.getElementById(`price-display-${config.id}`).innerText = formatCurrency(e.target.value);
+                        updateCalculatorUI();
+                    });
+                });
+
+                // Value-Based Pricing listener
+                document.getElementById('pricing-percentage').addEventListener('input', (e) => {
+                    calculatorAppState.valueBasedPricing.percentage = parseFloat(e.target.value);
+                    updateCalculatorUI();
+                });
+            }
+
+            // Initial setup for calculator
+            initializeCalculatorState();
+            numberOfFacilitiesEl.value = '1';
+            bedsPerFacilityEl.value = '100';
+            updateEmployeeCountsUI();
+            calculateAndRenderCalculator();
+
+            calculateBtn.addEventListener('click', calculateAndRenderCalculator);
+
+            resetBtn.addEventListener('click', () => {
+                initializeCalculatorState();
+                numberOfFacilitiesEl.value = '1';
+                bedsPerFacilityEl.value = '100';
+                resultsContainer.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center text-text-color-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-button-link-color"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><p class="mt-4">Your results will be displayed here.</p></div>`;
+                pricingSectionsContainer.innerHTML = '';
+                employeeCountsContainer.classList.add('hidden');
+                attachCalculatorEventListeners();
+                updateEmployeeCountsUI();
+                calculateAndRenderCalculator();
+            });
+
+            numberOfFacilitiesEl.addEventListener('input', updateEmployeeCountsUI);
+            bedsPerFacilityEl.addEventListener('input', updateEmployeeCountsUI);
+
+
+            // --- Pricing Strategy Section Logic (from Competncy Pricing Strategy.html) ---
+            // ROI Chart
+            const roiCtx = document.getElementById('roiChart').getContext('2d');
+            let roiChart;
+            const benefitsSlider = document.getElementById('totalBenefits');
+            const costsSlider = document.getElementById('totalCosts');
+            const benefitsValue = document.getElementById('benefitsValue');
+            const costsValue = document.getElementById('costsValue');
+
+            function calculateROI(benefits, costs) {
+                return ((benefits - costs) / costs) * 100;
+            }
+
+            function updateROIChart() {
+                const benefits = parseInt(benefitsSlider.value);
+                const costs = parseInt(costsSlider.value);
+                benefitsValue.textContent = benefits;
+                costsValue.textContent = costs;
+                const roi = calculateROI(benefits, costs);
+
+                const data = {
+                    labels: ['Total Costs', 'Total Benefits', 'Net Gain', 'ROI'],
+                    datasets: [{
+                        label: 'Financials',
+                        data: [costs, benefits, benefits - costs, 0],
+                        backgroundColor: [ 'var(--negative-color)', 'var(--highlight-color)', 'var(--sm-icon-button-color)', 'transparent' ],
+                        borderColor: [ 'var(--negative-color)', 'var(--highlight-color-darken)', 'var(--text-link-color)', 'transparent' ],
+                        borderWidth: 1
+                    }]
+                };
+
+                if (roiChart) {
+                    roiChart.destroy();
+                }
+
+                roiChart = new Chart(roiCtx, {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: `Projected ROI: ${roi.toFixed(0)}%`,
+                                font: { size: 16, weight: 'bold' },
+                                color: 'var(--text-color-1)'
+                            },
+                             tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.dataIndex === 3) return `ROI: ${roi.toFixed(0)}%`;
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.x !== null) {
+                                            label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.x);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) { return '$' + value / 1000 + 'k'; },
+                                    color: 'var(--text-color-2)'
+                                },
+                                grid: { color: 'var(--border-color)' }
+                            },
+                            y: {
+                                ticks: { color: 'var(--text-color-2)' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+            benefitsSlider.addEventListener('input', updateROIChart);
+            costsSlider.addEventListener('input', updateROIChart);
+            updateROIChart();
+
+
+            // Cost Chart
+            const costCtx = document.getElementById('costChart').getContext('2d');
+            new Chart(costCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Personnel', 'Technology', 'Sales & Marketing', 'Support & Maintenance', 'G&A / Other'],
+                    datasets: [{
+                        label: 'Cost Breakdown',
+                        data: [45, 25, 15, 10, 5],
+                        backgroundColor: ['var(--highlight-color)', 'var(--text-link-color)', 'var(--negative-color)', 'var(--background-color-2)', 'var(--text-color-2)'],
+                        borderColor: 'var(--background-color-3)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: 'var(--text-color-2)' } },
+                        title: { display: true, text: 'Typical SaaS Feature Cost Allocation', font: { size: 16 }, color: 'var(--text-color-1)' }
+                    }
+                }
+            });
+
+            // Van Westendorp Chart
+            const vwCtx = document.getElementById('vanWestendorpChart').getContext('2d');
+            new Chart(vwCtx, {
+                type: 'line',
+                data: {
+                    labels: ['$10', '$20', '$30', '$40', '$50', '$60', '$70', '$80'],
+                    datasets: [
+                        { label: 'Too Cheap (Cumulative %)', data: [100, 90, 70, 40, 20, 10, 5, 0], borderColor: 'var(--negative-color)', backgroundColor: 'var(--negative-color)/20', fill: true, tension: 0.3 },
+                        { label: 'Too Expensive (Cumulative %)', data: [0, 5, 10, 25, 45, 65, 85, 100], borderColor: 'var(--text-link-color)', backgroundColor: 'var(--text-link-color)/20', fill: true, tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Conceptual Price Sensitivity Meter', font: { size: 16 }, color: 'var(--text-color-1)' },
+                        legend: { position: 'bottom', labels: { color: 'var(--text-color-2)' } },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: '% of Respondents', color: 'var(--text-color-2)' },
+                            ticks: { color: 'var(--text-color-2)' },
+                            grid: { color: 'var(--border-color)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Price Point', color: 'var(--text-color-2)' },
+                            ticks: { color: 'var(--text-color-2)' },
+                            grid: { color: 'var(--border-color)' }
+                        }
+                    }
+                }
+            });
+
+            // Dynamic Content Rendering for Pricing Strategy
+            function renderWtpMethods() {
+                const container = document.getElementById('wtp-methods-container');
+                container.innerHTML = appData.pricingStrategyData.wtpMethods.map(method => `
+                    <div class="card card-interactive p-4 bg-white cursor-pointer" onclick="this.querySelector('.details').classList.toggle('hidden')">
+                        <h4 class="font-bold text-lg text-text-color-1">${method.name}</h4>
+                        <div class="details hidden mt-2 pt-2 border-t border-border-color">
+                           <p class="text-text-color-2"><strong>Pros:</strong> ${method.pros}</p>
+                           <p class="text-text-color-2"><strong>Cons:</strong> ${method.cons}</p>
+                           <p class="mt-1 text-sm text-text-link-color"><strong>Best for:</strong> ${method.use_case}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function renderPricingModels() {
+                const container = document.getElementById('pricing-models-container');
+                container.innerHTML = appData.pricingStrategyData.pricingModels.map(model => `
+                    <div class="card card-interactive bg-white">
+                        <h4 class="font-bold text-xl text-text-link-color mb-2">${model.name}</h4>
+                        <p class="text-text-color-2">${model.desc}</p>
+                    </div>
+                `).join('');
+            }
+
+             function renderBundlingStrategies() {
+                const container = document.getElementById('bundling-strategies-container');
+                container.innerHTML = appData.pricingStrategyData.bundlingStrategies.map(strategy => `
+                    <div class="card card-interactive bg-white">
+                        <h4 class="font-bold text-xl text-text-link-color mb-2">${strategy.name}</h4>
+                        <p class="text-text-color-2">${strategy.desc}</p>
+                    </div>
+                `).join('');
+            }
+
+            function renderSaasMetrics() {
+                const container = document.getElementById('saas-metrics-container');
+                container.innerHTML = appData.pricingStrategyData.saasMetrics.map(metric => `
+                    <div class="p-3 bg-white rounded-lg shadow-sm border border-border-color">
+                        <h4 class="font-semibold text-text-link-color">${metric.name}</h4>
+                        <p class="text-sm text-text-color-2">${metric.desc}</p>
+                    </div>
+                `).join('');
+            }
+
+            function renderDisruptionStrategies() {
+                 const container = document.getElementById('disruption-strategies-container');
+                container.innerHTML = appData.pricingStrategyData.disruptionStrategies.map(strategy => `
+                    <div class="card p-4 bg-white cursor-pointer" onclick="this.querySelector('.details').classList.toggle('hidden')">
+                        <h4 class="font-bold text-lg text-text-color-1">${strategy.name}</h4>
+                        <div class="details hidden mt-2 pt-2 border-t border-border-color">
+                           <p class="text-sm text-text-color-2">${strategy.desc}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function renderCommunicationChecklist() {
+                 const container = document.getElementById('communication-checklist');
+                container.innerHTML = appData.pricingStrategyData.communicationChecklist.map(item => `
+                    <div class="flex items-start space-x-3">
+                        <span class="flex-shrink-0 mt-1 h-5 w-5 rounded-full bg-highlight-color text-white flex items-center justify-center font-bold text-xs">✓</span>
+                        <div>
+                            <p class="font-semibold text-text-color-1">${item.item}</p>
+                            <p class="text-sm text-text-color-2">${item.desc}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Optimization Tabs
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const optimizationContent = document.getElementById('optimization-content');
+
+            function updateOptimizationTab(tabId) {
+                const tabData = appData.pricingStrategyData.optimizationTabs[tabId];
+                optimizationContent.innerHTML = `
+                    <div class="card bg-white p-6">
+                         <h4 class="text-2xl font-bold mb-4 text-text-color-1">${tabData.title}</h4>
+                         ${tabData.content}
+                    </div>
+                `;
+                optimizationContent.classList.remove('animate-fade-in');
+                void optimizationContent.offsetWidth; // Trigger reflow
+                optimizationContent.classList.add('animate-fade-in');
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    updateOptimizationTab(button.dataset.tab);
+                });
+            });
+
+            // Initial render for Pricing Strategy dynamic content
+            renderWtpMethods();
+            renderPricingModels();
+            renderBundlingStrategies();
+            renderSaasMetrics();
+            renderDisruptionStrategies();
+            renderCommunicationChecklist();
+            updateOptimizationTab('ab-testing'); // Initial tab
+        });
+    </script>
+</body>
+</html>
